@@ -1,3 +1,6 @@
-import db from "../../db/models/index.js";
+// Small helper used by the runtime server code to access Sequelize models.
+// The actual model definitions live in `db/models` for sequelize-cli.
 
-export const { sequelize, User, Round, Bet } = db;
+const db = require("./models");
+
+module.exports = db;

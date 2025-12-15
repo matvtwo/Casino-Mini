@@ -1,12 +1,14 @@
-import http from "http";
-import express from "express";
-import cors from "cors";
-import { WebSocketServer } from "ws";
+const http = require("http");
+const express = require("express");
+const cors = require("cors");
+const { WebSocketServer } = require("ws");
 
-import { sequelize } from "../db/index.js";
-import authRouter, { authMiddleware } from "./routes/auth.js";
-import { PORT } from "./config.js";
-import { RoundManager } from "./roundManager.js";
+const db = require("../db/models");
+const { sequelize } = db;
+const authRouter = require("./routes/auth");
+const { authMiddleware } = require("./routes/auth");
+const { PORT } = require("./config");
+const { RoundManager } = require("./roundManager");
 
 const app = express();
 app.use(cors());

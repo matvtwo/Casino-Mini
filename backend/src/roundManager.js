@@ -1,7 +1,8 @@
-import { Op } from "sequelize";
-import models, { sequelize } from "./db/index.js";
+const db = require("../db/models");
 
-export const ROUND_STATE = {
+const { sequelize, User, Round, Bet } = db;
+
+const ROUND_STATE = {
   IDLE: "IDLE",
   BETTING: "BETTING",
   SPINNING: "SPINNING",
@@ -12,7 +13,7 @@ const BETTING_MS = 8000;
 const SPINNING_MS = 3000;
 const RESULT_MS = 2000;
 
-export class RoundManager {
+class RoundManager {
   constructor({ broadcast, hasPlayers }) {
     this.broadcast = broadcast;
     this.hasPlayers = hasPlayers;
@@ -39,7 +40,10 @@ export class RoundManager {
 
   async enterBetting() {
     this.state = ROUND_STATE.BETTING;
-    this.currentRound = await models.Round.create({});
+    this.currentRound = await Round.create({
+      state: "BETTING",
+      startedAt: new Date(),
+    });
     this.broadcast({
       type: "ROUND_STATE",
       state: this.state,
@@ -52,6 +56,7 @@ export class RoundManager {
   async enterSpinning() {
     if (!this.currentRound) return this.reset();
     this.state = ROUND_STATE.SPINNING;
+    await this.currentRound.update({ state: "SPINNING" });
     this.broadcast({
       type: "ROUND_STATE",
       state: this.state,
@@ -66,8 +71,11 @@ export class RoundManager {
     this.state = ROUND_STATE.RESULT;
     const outcome = this.generateOutcome();
     await this.applyPayouts(outcome);
-    this.currentRound.result = outcome;
-    await this.currentRound.save();
+    await this.currentRound.update({
+      state: "RESULT",
+      result: outcome,
+      finishedAt: new Date(),
+    });
     this.broadcast({
       type: "ROUND_RESULT",
       roundId: this.currentRound.id,
@@ -93,16 +101,16 @@ export class RoundManager {
 
   async applyPayouts(outcome) {
     if (!outcome) return;
-    const bets = await models.Bet.findAll({
+    const bets = await Bet.findAll({
       where: { roundId: this.currentRound.id },
-      include: [{ model: models.User }],
+      include: [{ model: User }],
     });
     if (!bets.length) return;
     const tx = await sequelize.transaction();
     try {
       for (const bet of bets) {
         const win = bet.amount * outcome.payoutMultiplier;
-        if (win > 0) {
+        if (win > 0 && bet.User) {
           bet.User.balance += win;
           await bet.User.save({ transaction: tx });
         }
@@ -118,10 +126,10 @@ export class RoundManager {
     if (this.state !== ROUND_STATE.BETTING || !this.currentRound) {
       throw new Error("Betting closed");
     }
-    const user = await models.User.findByPk(userId);
+    const user = await User.findByPk(userId);
     if (!user) throw new Error("User missing");
     if (user.balance < amount) throw new Error("Insufficient balance");
-    const existing = await models.Bet.findOne({
+    const existing = await Bet.findOne({
       where: { userId, roundId: this.currentRound.id },
     });
     if (existing) throw new Error("Bet already placed");
@@ -129,7 +137,7 @@ export class RoundManager {
     try {
       user.balance -= amount;
       await user.save({ transaction: tx });
-      const bet = await models.Bet.create(
+      const bet = await Bet.create(
         { userId, amount, roundId: this.currentRound.id },
         { transaction: tx }
       );
@@ -149,6 +157,8 @@ export class RoundManager {
 
   async currentBets() {
     if (!this.currentRound) return [];
-    return models.Bet.findAll({ where: { roundId: this.currentRound.id } });
+    return Bet.findAll({ where: { roundId: this.currentRound.id } });
   }
 }
+
+module.exports = { RoundManager, ROUND_STATE };

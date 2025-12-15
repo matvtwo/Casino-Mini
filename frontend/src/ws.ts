@@ -1,4 +1,4 @@
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000';
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
 
 export type WsEvent =
   | { type: 'WELCOME'; user: any }
