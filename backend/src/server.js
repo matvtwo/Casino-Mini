@@ -8,7 +8,8 @@ const db = require("../db/models");
 const { sequelize, User, Item, UserItem, Transaction } = db;
 const authRouter = require("./routes/auth");
 const { authMiddleware, requireAdmin } = require("./routes/auth");
-const { PORT } = require("./config");
+const PORT = process.env.PORT || 3001;
+
 const { RoundManager, PAY_SYMBOLS } = require("./roundManager");
 
 const app = express();
