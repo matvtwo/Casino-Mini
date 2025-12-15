@@ -1,10 +1,13 @@
 {
   "name": "casino-backend",
   "version": "1.0.0",
-  "main": "src/server.js",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "start": "node dist/server.js",
+    "build": "npm run build:client && npm run build:server",
+    "build:server": "tsc -p tsconfig.json",
+    "build:client": "cd ../frontend && npm run build",
     "db:migrate": "sequelize db:migrate",
     "db:migrate:undo": "sequelize db:migrate:undo"
   },
@@ -22,6 +25,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.4",
-    "sequelize-cli": "^6.6.2"
+    "sequelize-cli": "^6.6.2",
+    "typescript": "^5.4.5"
   }
 }

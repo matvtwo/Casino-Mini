@@ -4,19 +4,21 @@ const jwt = require("jsonwebtoken");
 
 const db = require("../../db/models");
 const { User } = db;
-const { JWT_SECRET } = require("../config");
+const { JWT_SECRET, ADMIN_SECRET } = require("../config");
 
 const router = express.Router();
 
 function buildToken(user) {
-  return jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 }
 
 router.post("/register", async (req, res) => {
   try {
-    const { username, password, avatarUrl } = req.body;
+    const { username, password, avatarUrl, adminKey } = req.body;
     if (!username || !password) {
       return res.status(400).json({ message: "Missing fields" });
     }
@@ -27,7 +29,11 @@ router.post("/register", async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, passwordHash, avatarUrl });
+    const role =
+      adminKey && ADMIN_SECRET && adminKey === ADMIN_SECRET
+        ? "admin"
+        : "player";
+    const user = await User.create({ username, passwordHash, avatarUrl, role });
     const token = buildToken(user);
 
     return res.json({
@@ -37,6 +43,7 @@ router.post("/register", async (req, res) => {
         username: user.username,
         balance: user.balance,
         avatarUrl: user.avatarUrl,
+        role: user.role,
       },
     });
   } catch (err) {
@@ -70,6 +77,7 @@ router.post("/login", async (req, res) => {
         username: user.username,
         balance: user.balance,
         avatarUrl: user.avatarUrl,
+        role: user.role,
       },
     });
   } catch (err) {
@@ -100,8 +108,15 @@ async function authMiddleware(req, res, next) {
 
 router.get("/me", authMiddleware, (req, res) => {
   const { id, username, balance, avatarUrl } = req.user;
-  return res.json({ id, username, balance, avatarUrl });
+  const { role } = req.user;
+  return res.json({ id, username, balance, avatarUrl, role });
 });
 
 module.exports = router;
 module.exports.authMiddleware = authMiddleware;
+module.exports.requireAdmin = function requireAdmin(req, res, next) {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admin only" });
+  }
+  return next();
+};
