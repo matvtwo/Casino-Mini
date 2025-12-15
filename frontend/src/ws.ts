@@ -7,6 +7,8 @@ export type WsEvent =
   | { type: 'ROUND_RESULT'; roundId: number; result: any }
   | { type: 'BET_PLACED'; roundId: number; user: any; amount: number }
   | { type: 'BET_ACCEPTED'; betId: number }
+  | { type: 'USER_BALANCE'; user: any }
+  | { type: 'PAYOUT'; roundId: number; user: any; amount: number; multiplier: number; symbol?: string }
   | { type: 'ERROR'; message: string };
 
 export function connect(token: string, onEvent: (ev: WsEvent) => void) {
@@ -24,4 +26,3 @@ export function connect(token: string, onEvent: (ev: WsEvent) => void) {
     close: () => socket.close()
   };
 }
-
