@@ -110,7 +110,9 @@ app.post("/admin/credit", authMiddleware, requireAdmin, async (req, res) => {
   const { userId, username, amount, reason } = req.body;
   const amt = Number(amount);
   if (!amt || amt <= 0) {
-    return res.status(400).json({ message: "Amount must be a positive number" });
+    return res
+      .status(400)
+      .json({ message: "Amount must be a positive number" });
   }
   let target = null;
   if (userId) target = await User.findByPk(userId);
@@ -143,7 +145,8 @@ app.post("/admin/credit", authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-const publicDir = path.join(__dirname, "public");
+const publicDir = path.join(__dirname, "..", "dist", "public");
+
 app.use(express.static(publicDir));
 app.get("*", (_req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));

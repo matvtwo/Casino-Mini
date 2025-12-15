@@ -1,12 +1,12 @@
 {
   "name": "casino-backend",
   "version": "1.0.0",
-  "main": "dist/server.js",
+  "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node dist/server.js",
+    "start": "node src/server.js",
     "build": "npm run build:client && npm run build:server",
-    "build:server": "tsc -p tsconfig.json",
+    "build:server": "echo server build skipped (js only)",
     "build:client": "cd ../frontend && npm run build",
     "db:migrate": "sequelize db:migrate",
     "db:migrate:undo": "sequelize db:migrate:undo"
